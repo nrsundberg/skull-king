@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model game {
+  id Int @id @default(autoincrement())
+  started DateTime
+  ended DateTime?
+  inProgress Boolean @default(true)
+  name String
+  players player[]   
+  rounds round[]
+}
+
+model player {
+  id Int @id @default(autoincrement())
+  name String
+  game game[]
+  scores score[]
+  @@unique([name])
+}
+
+
+model round {
+  id Int @id @default(autoincrement())
+  roundNumber Round
+  started DateTime
+  ended DateTime?
+  scores score[]
+  game game @relation(fields: [gameId], references: [id])
+  gameId Int
+}
+
+model score {
+  id Int @id @default(autoincrement())
+  player player @relation(fields: [playerId], references: [id])
+  playerId Int
+  bid Int?
+  won Int?
+  loot Int
+  standardFourteen Int
+  blackFourteen Int
+  pirateMermaidCapture Int
+  skullKingPirateCapture Int
+  mermaidSkullKingCapture Int
+  scoreDelta Int?
+  round round @relation(fields: [roundId], references: [id])
+  roundId Int
+}
+
+enum Round {
+ ONE
+ TWO
+ THREE
+ FOUR 
+ FIVE
+ SIX
+ SEVEN
+ EIGHT
+ NINE
+ TEN
+}
