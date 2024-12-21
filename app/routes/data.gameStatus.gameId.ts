@@ -1,10 +1,10 @@
 import { player } from "@prisma/client";
-import { ActionFunctionArgs } from "@remix-run/node";
-import { jsonWithSuccess, redirectWithSuccess } from "remix-toast";
+import { dataWithSuccess, redirectWithSuccess } from "remix-toast";
 import invariant from "tiny-invariant";
 import { prisma } from "~/db.server";
+import { Route } from "./+types/data.gameStatus.gameId";
 
-export async function action({ request, params }: ActionFunctionArgs) {
+export async function action({ request, params }: Route.ActionArgs) {
   let { gameId } = params;
   invariant(gameId, "Must include id to create user");
   switch (request.method) {
@@ -13,7 +13,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         where: { id: parseInt(gameId) },
         data: { ended: new Date() },
       });
-      return jsonWithSuccess("updated", "Game ended");
+      return dataWithSuccess("updated", "Game ended");
     }
     case "PUT": {
       let gameWithPlayers = await prisma.game.findFirstOrThrow({

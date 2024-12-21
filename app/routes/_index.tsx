@@ -3,32 +3,23 @@ import {
   AutocompleteItem,
   Button,
   Input,
-  useNavbar,
 } from "@nextui-org/react";
 import { game } from "@prisma/client";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction,
-} from "@remix-run/node";
-import { data, Form, useLoaderData, useNavigate } from "@remix-run/react";
+import { data, Form, useNavigate } from "react-router";
 import { Key } from "react";
-import {
-  jsonWithSuccess,
-  jsonWithWarning,
-  redirectWithSuccess,
-} from "remix-toast";
+import { dataWithWarning, redirectWithSuccess } from "remix-toast";
 import invariant from "tiny-invariant";
 import { prisma } from "~/db.server";
+import { Route } from "./+types/_index";
 
-export const meta: MetaFunction = () => {
+export const meta: Route.MetaFunction = () => {
   return [
     { title: "Skull King" },
     { name: "description", content: "Create of join Skull King game" },
   ];
 };
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({}: Route.LoaderArgs) {
   return data({
     users: await prisma.player.findMany(),
     nonCompleteGames: await prisma.game.findMany({
@@ -37,7 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request }: Route.ActionArgs) {
   let formData = await request.formData();
   let action = formData.get("action")?.toString();
 
@@ -53,7 +44,7 @@ export async function action({ request }: ActionFunctionArgs) {
       });
       return redirectWithSuccess(`/game/${game.id}`, "Created game");
     } catch (e) {
-      return jsonWithWarning(
+      return dataWithWarning(
         "caught",
         `Could not create game with error: ${e}`
       );
@@ -62,10 +53,10 @@ export async function action({ request }: ActionFunctionArgs) {
   return null;
 }
 
-export default function Index() {
-  let { users, nonCompleteGames } = useLoaderData<typeof loader>();
+export default function Index({ loaderData }: Route.ComponentProps) {
+  let { users, nonCompleteGames } = loaderData;
 
-  const navigate = useNavigate();
+  let navigate = useNavigate();
 
   const navigateToInProgressGame = (e: Key | null) => {
     if (e) {

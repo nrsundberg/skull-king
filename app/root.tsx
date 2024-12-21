@@ -1,13 +1,5 @@
-import {
-  data,
-  Links,
-  Meta,
-  Outlet,
-  Scripts,
-  ScrollRestoration,
-  useLoaderData,
-} from "@remix-run/react";
-import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
+import { data, Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "react-router";
+import type { LinksFunction, LoaderFunctionArgs } from "react-router";
 import { NextUIProvider } from "@nextui-org/react";
 import "./tailwind.css";
 import { useEffect } from "react";

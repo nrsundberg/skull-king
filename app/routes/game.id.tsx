@@ -12,7 +12,6 @@ import {
   TableHeader,
   Accordion,
   AccordionItem,
-  ButtonGroup,
   Navbar,
   NavbarBrand,
   NavbarContent,
@@ -20,37 +19,34 @@ import {
   ScrollShadow,
 } from "@nextui-org/react";
 import { player, Round, round, score } from "@prisma/client";
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import {
   Form,
   Link,
-  MetaFunction,
-  useLoaderData,
   useNavigation,
   useSearchParams,
   useSubmit,
-} from "@remix-run/react";
-import { form } from "framer-motion/client";
+} from "react-router";
 import React, { useEffect, useMemo, useRef } from "react";
-import { jsonWithSuccess, redirectWithError } from "remix-toast";
+import { dataWithSuccess, redirectWithError } from "remix-toast";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { prisma } from "~/db.server";
 import { getRoundScore, intToRound, roundToInt } from "~/utils/appUtils";
+import { Route } from "./+types/game.id";
 
-export const meta: MetaFunction = ({ params }) => {
+export const meta: Route.MetaFunction = ({ params }) => {
   return [
     { title: `Game ${params.id}` },
     { name: "description", content: "Create of join Skull King game" },
   ];
 };
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ params }: Route.LoaderArgs) {
   let { id } = params;
 
   if (id === undefined) {
-    return redirectWithError("/", `Game with id: ${id} doesn't exist`);
+    throw await redirectWithError("/", `Game with id: ${id} doesn't exist`);
   }
   try {
     return await prisma.game.findUniqueOrThrow({
@@ -68,7 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       },
     });
   } catch (e) {
-    return redirectWithError("/", `Game with id: ${id} doesn't exist`);
+    throw await redirectWithError("/", `Game with id: ${id} doesn't exist`);
   }
 }
 
@@ -85,7 +81,7 @@ let updateSchema = zfd.formData({
   mermaidSkullKingCapture: z.coerce.number().optional(),
 });
 
-export async function action({ request, params }: ActionFunctionArgs) {
+export async function action({ request, params }: Route.ActionArgs) {
   let { id } = params;
   invariant(id, "Must include id to create user");
   switch (request.method) {
@@ -115,7 +111,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           },
         });
       });
-      return jsonWithSuccess(
+      return dataWithSuccess(
         "Started",
         `Started round ${game.rounds.length + 1}`
       );
@@ -128,14 +124,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
         player = await prisma.player.create({
           data: { name: name, game: { connect: { id: parseInt(id) } } },
         });
-        return jsonWithSuccess("created", `Created ${name} and added to game`);
+        return dataWithSuccess("created", `Created ${name} and added to game`);
       } else {
         invariant(player, "Player must exist");
         await prisma.player.update({
           where: { id: player.id },
           data: { game: { connect: { id: parseInt(id) } } },
         });
-        return jsonWithSuccess("used db", `Added ${name} to game`);
+        return dataWithSuccess("used db", `Added ${name} to game`);
       }
     }
     case "POST":
@@ -161,9 +157,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 }
 
-export default function () {
-  const data = useLoaderData<typeof loader>();
-  const [searchParams, setSearchParams] = useSearchParams();
+export default function ({ loaderData }: Route.ComponentProps) {
+  let data = loaderData;
+  let [searchParams, setSearchParams] = useSearchParams();
 
   const setAccordionOpen = (keys: "all" | Set<React.Key>) => {
     if (keys instanceof Set) {
