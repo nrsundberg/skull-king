@@ -1,6 +1,5 @@
 import { player } from "@prisma/client";
 import { ActionFunctionArgs } from "@remix-run/node";
-import { tr } from "framer-motion/client";
 import { jsonWithSuccess, redirectWithSuccess } from "remix-toast";
 import invariant from "tiny-invariant";
 import { prisma } from "~/db.server";
