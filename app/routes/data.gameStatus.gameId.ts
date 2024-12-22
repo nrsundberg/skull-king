@@ -11,7 +11,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     case "DELETE": {
       await prisma.game.update({
         where: { id: parseInt(gameId) },
-        data: { ended: new Date() },
+        data: { ended: new Date(), inProgress: false },
       });
       return dataWithSuccess("updated", "Game ended");
     }
