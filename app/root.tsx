@@ -1,5 +1,11 @@
-import { data, Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "react-router";
-import type { LinksFunction, LoaderFunctionArgs } from "react-router";
+import {
+  data,
+  Links,
+  Meta,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+} from "react-router";
 import { NextUIProvider } from "@nextui-org/react";
 import "./tailwind.css";
 import { useEffect } from "react";
@@ -7,8 +13,9 @@ import { getToast } from "remix-toast";
 import { toast as notify, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import toastStyles from "react-toastify/dist/ReactToastify.css?url";
+import { Route } from "./+types/root";
 
-export const links: LinksFunction = () => [
+export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
@@ -22,7 +29,7 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: toastStyles },
 ];
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request }: Route.LoaderArgs) => {
   // Extracts the toast from the request
   const { toast, headers } = await getToast(request);
   // Important to pass in the headers so the toast is cleared properly
@@ -30,15 +37,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const data = useLoaderData<typeof loader>();
-
-  useEffect(() => {
-    if (data?.toast) {
-      // Call your toast function here
-      notify(data.toast.message, { type: data.toast.type });
-    }
-  }, [data]);
-
   return (
     <html lang="en">
       <head>
@@ -50,8 +48,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         <NextUIProvider>
           {/* <main className="dark text-foreground bg-background"> */}
-          {/* Add the toast container */}
-          <ToastContainer stacked />
+          <ToastContainer stacked position="bottom-right" />
           {children}
           <ScrollRestoration />
           <Scripts />
@@ -62,6 +59,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
+export default function App({ loaderData }: Route.ComponentProps) {
+  const { toast } = loaderData;
+
+  useEffect(() => {
+    if (toast) {
+      notify(toast.message, { type: toast.type });
+    }
+  }, [toast]);
+
   return <Outlet />;
 }

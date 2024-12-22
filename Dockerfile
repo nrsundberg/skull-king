@@ -24,6 +24,9 @@ RUN apt-get update -qq && \
 COPY package-lock.json package.json ./
 RUN npm ci --include=dev
 
+# COPY package.json ./
+# RUN npm i --include=dev
+
 # Generate Prisma Client
 COPY prisma .
 RUN npx prisma generate

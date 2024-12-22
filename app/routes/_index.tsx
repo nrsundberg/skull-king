@@ -9,7 +9,7 @@ import { data, Form, useNavigate } from "react-router";
 import { Key } from "react";
 import { dataWithWarning, redirectWithSuccess } from "remix-toast";
 import invariant from "tiny-invariant";
-import { prisma } from "~/db.server";
+import prisma from "../db.server";
 import { Route } from "./+types/_index";
 
 export const meta: Route.MetaFunction = () => {
@@ -34,16 +34,19 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (action === "create") {
     let gameName = formData.get("name")?.toString();
+    console.log(gameName);
     try {
       invariant(gameName, "Must include game name");
       let game = await prisma.game.create({
         data: {
           name: gameName,
           started: new Date(),
+          inProgress: true,
         },
       });
       return redirectWithSuccess(`/game/${game.id}`, "Created game");
     } catch (e) {
+      console.error(e);
       return dataWithWarning(
         "caught",
         `Could not create game with error: ${e}`
@@ -94,6 +97,7 @@ export default function Index({ loaderData }: Route.ComponentProps) {
               </Button>
             </div>
             <Autocomplete
+              key={"GameAutocomplete"}
               label="Join game selector"
               onSelectionChange={(e) => navigateToInProgressGame(e)}
             >

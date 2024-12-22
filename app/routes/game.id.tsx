@@ -31,9 +31,9 @@ import { dataWithSuccess, redirectWithError } from "remix-toast";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { prisma } from "~/db.server";
-import { getRoundScore, intToRound, roundToInt } from "~/utils/appUtils";
+import { getRoundScore, intToRound, roundToInt } from "../utils/appUtils";
 import { Route } from "./+types/game.id";
+import prisma from "../db.server";
 
 export const meta: Route.MetaFunction = ({ params }) => {
   return [
@@ -200,7 +200,7 @@ export default function ({ loaderData }: Route.ComponentProps) {
           <NavbarItem>
             <Button
               color="warning"
-              onClick={() =>
+              onPress={() =>
                 submit(
                   {},
                   {
@@ -217,7 +217,7 @@ export default function ({ loaderData }: Route.ComponentProps) {
           <NavbarItem>
             <Button
               color="danger"
-              onClick={() =>
+              onPress={() =>
                 submit(
                   {},
                   {
@@ -272,7 +272,6 @@ export default function ({ loaderData }: Route.ComponentProps) {
         </AccordionItem>
       </Accordion>
 
-      <ScoreBoard rounds={data.rounds} />
       <Accordion
         selectionMode="multiple"
         key={data.rounds.length}
@@ -339,6 +338,7 @@ export default function ({ loaderData }: Route.ComponentProps) {
         </Button>
         {data.players.length === 0 && <p>Please add players to game</p>}
       </Form>
+      <ScoreBoard rounds={data.rounds} />
     </div>
   );
 }

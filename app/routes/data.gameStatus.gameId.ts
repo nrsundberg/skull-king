@@ -1,7 +1,7 @@
 import { player } from "@prisma/client";
 import { dataWithSuccess, redirectWithSuccess } from "remix-toast";
 import invariant from "tiny-invariant";
-import { prisma } from "~/db.server";
+import prisma from "../db.server";
 import { Route } from "./+types/data.gameStatus.gameId";
 
 export async function action({ request, params }: Route.ActionArgs) {
