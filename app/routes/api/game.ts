@@ -5,10 +5,15 @@ import { nanoid } from "nanoid";
 import { getOptionalUserFromContext } from "~/domain/utils/global-context.server";
 import { z } from "zod";
 
-const CreateGameSchema = z.object({
+const CopiedSettingsSchema = z.object({
   maxPlayers: z.number().int().min(2).max(8).default(4),
   mode: z.enum(["digital", "scorekeeper"]).default("digital"),
   scoringStyle: z.enum(["single", "distributed"]).default("distributed"),
+});
+
+const CreateGameSchema = CopiedSettingsSchema.extend({
+  rematchOf: z.string().min(1).optional(),
+  settings: CopiedSettingsSchema.optional(),
 });
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -22,12 +27,40 @@ export async function action({ request, context }: Route.ActionArgs) {
     throw data({ error: "Invalid request" }, { status: 400 });
   }
 
-  const { maxPlayers, mode, scoringStyle } = parsed.data;
+  const db = getPrisma(context);
+  const { rematchOf } = parsed.data;
+  let { maxPlayers, mode, scoringStyle } = parsed.data.settings ?? parsed.data;
+
+  if (rematchOf) {
+    const originalGame = await db.game.findUnique({
+      where: { id: rematchOf },
+      select: { settings: true },
+    });
+
+    if (!originalGame) {
+      throw data({ error: "Original game not found" }, { status: 404 });
+    }
+
+    let originalSettingsJson: unknown;
+    try {
+      originalSettingsJson = JSON.parse(originalGame.settings);
+    } catch {
+      throw data({ error: "Original game settings are invalid" }, { status: 400 });
+    }
+
+    const originalSettings = CopiedSettingsSchema.safeParse(originalSettingsJson);
+
+    if (!originalSettings.success) {
+      throw data({ error: "Original game settings are invalid" }, { status: 400 });
+    }
+
+    ({ maxPlayers, mode, scoringStyle } = originalSettings.data);
+  }
+
   const gameId = nanoid(6);
   const seed = Math.floor(Math.random() * 2 ** 32);
   const settings = { seed, maxPlayers, mode, scoringStyle };
 
-  const db = getPrisma(context);
   await db.game.create({
     data: {
       id: gameId,

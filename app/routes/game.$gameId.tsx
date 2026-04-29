@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
-import { data, redirect, useFetcher } from "react-router";
+import { data, redirect, useFetcher, useNavigate } from "react-router";
 import type { Route } from "./+types/game.$gameId";
 import { getPrisma } from "~/db.server";
 import { getOptionalUserFromContext } from "~/domain/utils/global-context.server";
@@ -245,6 +245,7 @@ export default function GameRoom({ loaderData }: Route.ComponentProps) {
     initialSeat === -1 && gameStatus === "waiting" && !isSingleScorer,
   );
   const joinFetcher = useFetcher<typeof action>();
+  const navigate = useNavigate();
 
   const [phase, setPhase] = useState(doState?.phase ?? "lobby");
   const [round, setRound] = useState(doState?.round ?? 0);
@@ -287,6 +288,7 @@ export default function GameRoom({ loaderData }: Route.ComponentProps) {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [copied, setCopied] = useState(false);
+  const [creatingRematch, setCreatingRematch] = useState(false);
   const [tigressCardId, setTigressCardId] = useState<number | null>(null);
   // Locks the hand after clicking a card so double-clicks can't submit
   // two play_card messages for a single trick. Cleared when the server
@@ -553,6 +555,27 @@ export default function GameRoom({ loaderData }: Route.ComponentProps) {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+  const handleRematch = async () => {
+    if (creatingRematch) return;
+    setCreatingRematch(true);
+    try {
+      const res = await fetch("/api/game", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rematchOf: gameId }),
+      });
+      const result = (await res.json()) as { gameId?: string; error?: string };
+      if (!res.ok || !result.gameId) {
+        throw new Error(result.error || "Could not create rematch");
+      }
+      navigate(`/game/${result.gameId}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not create rematch", {
+        theme: "dark",
+      });
+      setCreatingRematch(false);
+    }
+  };
 
   const isMyTurn = phase === "playing" && currentSeat === mySeat;
   const sortedPlayers = [...players].sort((a, b) => a.seat - b.seat);
@@ -715,8 +738,15 @@ export default function GameRoom({ loaderData }: Route.ComponentProps) {
                   </li>
                 ))}
             </ul>
-            <a href="/" className="td-btn-primary w-full flex items-center justify-center mt-4">
-              New Game
+            <BtnPrimary
+              fullWidth
+              onClick={handleRematch}
+              disabled={creatingRematch}
+            >
+              {creatingRematch ? "Charting rematch…" : "Rematch with same rules"}
+            </BtnPrimary>
+            <a href="/" className="td-btn-secondary w-full flex items-center justify-center mt-3">
+              New setup
             </a>
           </div>
         </div>
